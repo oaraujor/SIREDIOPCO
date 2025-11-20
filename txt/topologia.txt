@@ -1,0 +1,28 @@
+# Ejemplo de grafo para cargar con cargar_grafo
+# Formato:
+# NS <num_nodos>
+# N <nombre> <ip> <tipo_int> <cap>
+# AS <num_aristas>
+# A <origen> <destino> <lat> <bw> <fiab> <activo>
+
+NS 6
+
+# Nombres sin espacios, IP formato a.b.c.d, tipo_int: 0=ROUTER 1=SWITCH 2=HOST 3=SERVIDOR 4=DEFAULT
+N RouterA 192.168.0.1 0 100
+N RouterB 192.168.0.2 0 100
+N Switch1 192.168.0.10 1 50
+N Host1 192.168.0.101 2 10
+N Host2 192.168.0.102 2 10
+N Server1 10.0.0.5 3 200
+
+AS 7
+
+# A <origen> <destino> <lat(ms)> <bw(Mbps)> <fiab> <activo>
+A RouterA RouterB 10 100 0.990000 1
+A RouterA Switch1 5 1000 0.999000 1
+A Switch1 Host1 1 100 0.999000 1
+A Switch1 Host2 1 100 0.800000 1
+A RouterB Server1 20 200 0.950000 1
+A RouterB Switch1 15 100 0.900000 1
+# Enlace inactivo (ejemplo): Host2 -> Server1 está definido pero marcado como caído
+A Host2 Server1 50 10 0.700000 0

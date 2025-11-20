@@ -8,6 +8,14 @@
 #include "dijkstra.h"
 #include "colors.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#define LIMPIAR system("cls")
+#else
+#include <unistd.h>
+#define LIMPIAR system("clear")
+#endif
+
 /* Declaraciones de funciones auxiliares */
 double costo_por_latencia(const ARISTA *);
 void imprimir_ayuda();
@@ -27,13 +35,25 @@ int main(void)
     int indice, indice_origen, indice_destino, contador, k;
     Tipo_Dispositivo tipo_disp;
 
-    grafo = crear_grafo(16);
+    const char *archivo_default = "txt/topologia.txt";
+
+    grafo = crear_grafo(20);
 
     if (!grafo)
     {
         fprintf(stderr, "Error creando grafo.\n");
         return 1;
     }
+
+    if (cargar_grafo(grafo, archivo_default) == 0)
+    {
+        printf("[OK] Grafo cargado desde %s\n", archivo_default);
+    }
+    else
+    {
+        printf("[INFO] No se pudo cargar %s, iniciando grafo vacío. (0/20 vertices)\n", archivo_default);
+    }
+
     ejecutar_cli = true;
 
     while (ejecutar_cli)
@@ -85,7 +105,7 @@ int main(void)
             }
             else
             {
-                printf("[ERROR] Falló guardar.\n");
+                printf("[ERROR] Fallo guardar.\n");
             }
             continue;
         }
@@ -105,7 +125,7 @@ int main(void)
             }
             else
             {
-                printf("[ERROR] Falló cargar %s\n", archivo_nombre);
+                printf("[ERROR] Fallo cargar %s\n", archivo_nombre);
             }
 
             continue;
@@ -156,6 +176,7 @@ int main(void)
 
             continue;
         }
+
         if (strcmp(token, "conectar-dispositivo") == 0)
         {
             origen_str = strtok(NULL, " \n");
@@ -296,6 +317,20 @@ int main(void)
             comando_optimizar_ruta(grafo, origen_str, destino_str);
             continue;
         }
+
+        if (strcmp(token, "visualizar-grafo") == 0)
+        {
+            // Llamar a la función de visualización aquí fork()
+
+            continue;
+        }
+
+        if (strcmp(token, "limpiar") == 0)
+        {
+            LIMPIAR;
+            continue;
+        }
+
         printf("[ERROR] Comando no reconocido. Escribe 'ayuda'.\n");
     }
 
@@ -303,27 +338,30 @@ int main(void)
     return 0;
 }
 
-/* Función de coste por latencia */
+/* Funcion de coste por latencia */
 double costo_por_latencia(const ARISTA *ar)
 {
     return (double)ar->latencia_ms;
 }
 
-/* impresión de ayuda */
+/* impresion de ayuda */
 void imprimir_ayuda()
 {
-    printf("Comandos y Usos:\n");
+    printf("Comandos y Usos:\n\n");
     printf("nuevo-disp <nombre> <ip> <tipo> <cap>\n");
     printf("conectar-dispositivo <origen> <destino> <lat> <bw> <fiab>\n");
-    printf("ver-grafo\n");
+    printf("guardar <nombre_archivo>\n");
     printf("ping <origen> <destino> [count]\n");
     printf("traceroute <origen> <destino> [K]\n");
     printf("fallar-disp <nombre>\n");
     printf("fallar-enlace <origen> <destino>\n");
     printf("analizar-resiliencia\n");
     printf("optimizar-ruta <origen> <destino>\n");
+    printf("ver-grafo\n");
+    printf("visualizar-grafo\n");
+    printf("limpiar\n");
     printf("ayuda\n");
-    printf("salir\n");
+    printf("salir\n\n");
 }
 
 /* Imprimir camino a partir de índices */
@@ -343,11 +381,12 @@ void imprimir_camino_por_indices(GRAFO *grafo, const int *camino, int len)
     printf("\n");
 }
 
-/* PING con simulación de pérdida */
+/* PING con simulacion de pérdida */
 void resolver_ping(GRAFO *grafo, const char *origen_nombre, const char *dest_nombre, int cuenta)
 {
     int indice_origen, indice_destino, anterior[256], i, u, v, perdido, camino[256], enviados, recibidos, prueba;
     double distancia[256], acumulada_lat, r, rtt_min, rtt_max, rtt_sum;
+    int longitud_camino;
     ARISTA *ar, *ar_seleccionada;
 
     if (cuenta <= 0)
@@ -368,7 +407,7 @@ void resolver_ping(GRAFO *grafo, const char *origen_nombre, const char *dest_nom
         printf("[PING] No hay camino entre %s y %s.\n", origen_nombre, dest_nombre);
         return;
     }
-    int longitud_camino = reconstruir_camino(anterior, indice_destino, camino, 256);
+    longitud_camino = reconstruir_camino(anterior, indice_destino, camino, 256);
     if (longitud_camino <= 0)
     {
         printf("[PING] Error reconstruyendo ruta.\n");
@@ -589,24 +628,26 @@ void comando_analizar_resiliencia(GRAFO *grafo)
         {
             i = 0;
             for (i = 0; i < nb; ++i)
-                j = 0;
-            for (j = i + 1; j < nb; ++j)
             {
-                A = vecinos[i];
-                B = vecinos[j];
-                existe = 0;
-                aa = grafo->vertices[A].lista_adyacencia;
-                while (aa)
+                j = 0;
+                for (j = i + 1; j < nb; ++j)
                 {
-                    if (aa->destino == B)
+                    A = vecinos[i];
+                    B = vecinos[j];
+                    existe = 0;
+                    aa = grafo->vertices[A].lista_adyacencia;
+                    while (aa)
                     {
-                        existe = 1;
-                        break;
+                        if (aa->destino == B)
+                        {
+                            existe = 1;
+                            break;
+                        }
+                        aa = aa->siguiente;
                     }
-                    aa = aa->siguiente;
+                    if (!existe)
+                        printf(" - Sugerencia: conectar %s <--> %s\n", grafo->vertices[A].nombre, grafo->vertices[B].nombre);
                 }
-                if (!existe)
-                    printf(" - Sugerencia: conectar %s <--> %s\n", grafo->vertices[A].nombre, grafo->vertices[B].nombre);
             }
         }
         else
@@ -675,7 +716,7 @@ void comando_optimizar_ruta(GRAFO *grafo, const char *origen_nombre, const char 
     printf("[OPT] Latencia actual: %.2f ms. Latencia con enlace hipotético: %.2f ms\n", actual, mejorado);
     if (mejorado < 0.8 * actual)
     {
-        printf("[OPT] Recomendación: añadir enlace directo %s -> %s (lat=%d ms, bw=%d Mbps, fiab=%.2f)\n", origen_nombre, dest_nombre, try_lat, try_bw, try_f);
+        printf("[OPT] Recomendacion: añadir enlace directo %s -> %s (lat=%d ms, bw=%d Mbps, fiab=%.2f)\n", origen_nombre, dest_nombre, try_lat, try_bw, try_f);
     }
     else
     {
