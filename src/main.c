@@ -13,6 +13,9 @@
 #define LIMPIAR system("cls")
 #else
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <signal.h>
 #define LIMPIAR system("clear")
 #endif
 
@@ -34,14 +37,17 @@ int main(void)
     char linea[512], *token, *archivo_nombre, *nombre, *ip_cadena, *tipo_str, *cap_str, *origen_str, *destino_str, *lat_str, *bw_str, *fi_str, *ct_str, *ks_str;
     int indice, indice_origen, indice_destino, contador, k;
     Tipo_Dispositivo tipo_disp;
+    pid_t pidPython = -1, pid;
 
     const char *archivo_default = "txt/topologia.txt";
+
+    LIMPIAR;
 
     grafo = crear_grafo(20);
 
     if (!grafo)
     {
-        fprintf(stderr, "Error creando grafo.\n");
+        printf("[ERROR] Error creando grafo.\n");
         return 1;
     }
 
@@ -55,6 +61,7 @@ int main(void)
     }
 
     ejecutar_cli = true;
+    signal(SIGCHLD, SIG_IGN);
 
     while (ejecutar_cli)
     {
@@ -174,6 +181,8 @@ int main(void)
                 printf("[ERROR] No se pudo agregar dispositivo.\n");
             }
 
+            guardar_grafo(grafo, archivo_default);
+
             continue;
         }
 
@@ -208,6 +217,8 @@ int main(void)
             {
                 printf("[ERROR] No se pudo agregar conexion.\n");
             }
+
+            guardar_grafo(grafo, archivo_default);
 
             continue;
         }
@@ -255,7 +266,7 @@ int main(void)
             comando_traceroute(grafo, origen_str, destino_str, k);
             continue;
         }
-
+        /*
         if (strcmp(token, "fallar-disp") == 0)
         {
             nombre = strtok(NULL, " \n");
@@ -272,8 +283,11 @@ int main(void)
             }
             establecer_estado_vertice(grafo, indice, 0);
             printf("[OK] Dispositivo %s marcado como FALLIDO.\n", nombre);
+
+            guardar_grafo(grafo, archivo_default);
             continue;
         }
+        */
 
         if (strcmp(token, "fallar-enlace") == 0)
         {
@@ -295,6 +309,7 @@ int main(void)
             }
             establecer_estado_arista(grafo, indice_origen, indice_destino, 0);
             printf("[OK] Enlace %s -> %s desactivado.\n", origen_str, destino_str);
+            guardar_grafo(grafo, archivo_default);
             continue;
         }
 
@@ -321,6 +336,21 @@ int main(void)
         if (strcmp(token, "visualizar-grafo") == 0)
         {
             // Llamar a la función de visualización aquí fork()
+            pid = fork();
+
+            if (pid < 0)
+            {
+                printf("[ERROR] No se pudo abrir el visualizador grafico.\n");
+            }
+            else if (pid == 0)
+            {
+                execlp("python3", "python3", "src/verGrafoL.py", (char *)NULL);
+            }
+            else
+            {
+                pidPython = pid;
+                printf("[OK] Visualizador grafico iniciado.\n");
+            }
 
             continue;
         }
@@ -332,6 +362,26 @@ int main(void)
         }
 
         printf("[ERROR] Comando no reconocido. Escribe 'ayuda'.\n");
+    }
+
+    if (pidPython > 0)
+    {
+        if (kill(pidPython, SIGTERM) == 0)
+        {
+            waitpid(pidPython, NULL, 0);
+            printf("[OK] Visualizador grafico terminado.\n");
+        }
+        else
+        {
+            if (errno == ESRCH)
+            {
+                printf("[INFO] Visualizador grafico ya habia terminado.\n");
+            }
+            else
+            {
+                printf("[ERROR] No se pudo terminar el visualizador grafico.\n");
+            }
+        }
     }
 
     liberar_grafo(grafo);
@@ -353,7 +403,6 @@ void imprimir_ayuda()
     printf("guardar <nombre_archivo>\n");
     printf("ping <origen> <destino> [count]\n");
     printf("traceroute <origen> <destino> [K]\n");
-    printf("fallar-disp <nombre>\n");
     printf("fallar-enlace <origen> <destino>\n");
     printf("analizar-resiliencia\n");
     printf("optimizar-ruta <origen> <destino>\n");

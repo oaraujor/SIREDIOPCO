@@ -50,14 +50,14 @@ COLOR_EDGE_DOWN = (220, 30, 30)
 TEXT_COLOR = (240, 240, 240)
 
 # Nombre por defecto del archivo (se puede sobreescribir con argumento)
-DEFAULT_FILENAME = "network_saved.txt"
+DEFAULT_FILENAME = "txt/topologia.txt"
 
 def parse_guardado(filename):
     """
     Parsea el fichero en el formato usado por guardar_grafo/cargar_grafo.
     Devuelve:
-      vertices: lista de dict {name, ip, tipo (int), cap (int), activo (1/0)}
-      aristas: lista de dict {origen, destino, lat, bw, fiab, activo (1/0)}
+        vertices: lista de dict {name, ip, tipo (int), cap (int), activo (1/0)}
+        aristas: lista de dict {origen, destino, lat, bw, fiab, activo (1/0)}
     Acepta opcionalmente líneas 'V <nombre> <activo>' para marcar vértices caídos.
     """
     vertices = []

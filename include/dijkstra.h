@@ -128,7 +128,9 @@ int reconstruir_camino(const int *anterior, int indice_destino, int *camino, int
 
     i = 0;
     for (i = 0; i < contador; ++i)
+    {
         camino[i] = tmp[contador - 1 - i];
+    }
     return contador;
 }
 
@@ -143,6 +145,7 @@ int calcular_metricas_ruta(GRAFO *grafo, const int *camino, int longitud_camino,
 
     if (!grafo || !camino || longitud_camino <= 0)
         return -1;
+
     lat = 0.0;
     bwmin = INT_MAX;
     prod = 1.0;
@@ -186,13 +189,16 @@ int calcular_metricas_ruta(GRAFO *grafo, const int *camino, int longitud_camino,
 int caminos_iguales(const int *a, int alen, const int *b, int blen)
 {
     int i;
+
     if (alen != blen)
         return 0;
 
     i = 0;
     for (i = 0; i < alen; ++i)
+    {
         if (a[i] != b[i])
             return 0;
+    }
     return 1;
 }
 
@@ -218,6 +224,7 @@ int encontrar_k_rutas_aproximadas(GRAFO *grafo, int indice_origen, int indice_de
 
     if (len <= 0)
         return 0;
+
     longitudes[encontrados] = len;
     encontrados++;
 
@@ -299,4 +306,4 @@ int encontrar_k_rutas_aproximadas(GRAFO *grafo, int indice_origen, int indice_de
     return encontrados;
 }
 
-#endif /* DIJKSTRA_H */
+#endif

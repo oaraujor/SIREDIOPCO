@@ -158,7 +158,7 @@ int ip_valida(const char *ip)
     return 1;
 }
 
-/* Add vertex */
+/* agregar vertice */
 int agregar_vertice(GRAFO *grafo, const char *nombre, const char *ip, Tipo_Dispositivo tipo, int capacidad_proc)
 {
     int indice;
@@ -168,12 +168,12 @@ int agregar_vertice(GRAFO *grafo, const char *nombre, const char *ip, Tipo_Dispo
         return -1;
     if (!ip_valida(ip))
     {
-        fprintf(stderr, "[!!!] IP inválida: %s\n", ip);
+        printf("[ERROR] IP inválida: %s\n", ip);
         return -1;
     }
     if (indice_por_nombre(grafo, nombre) != -1)
     {
-        fprintf(stderr, "[!!!] Nodo duplicado: %s\n", nombre);
+        printf("[ERROR] Nodo duplicado: %s\n", nombre);
         return -1;
     }
     if (asegurar_capacidad(grafo) != 0)
@@ -218,7 +218,7 @@ int establecer_estado_vertice(GRAFO *grafo, int indice, int activo)
     return 0;
 }
 
-/* Add directed edge origen -> dest */
+/* agraga arista de origen -> dest */
 int agregar_arista(GRAFO *grafo, int indice_origen, int indice_destino, int latencia_ms, int ancho_banda_mbps, double fiabilidad, int activo)
 {
     ARISTA *ar;
@@ -230,7 +230,7 @@ int agregar_arista(GRAFO *grafo, int indice_origen, int indice_destino, int late
         return -1;
     if (latencia_ms < 0 || ancho_banda_mbps < 0)
     {
-        fprintf(stderr, "[!!!] Latencia/Ancho invalidos.\n");
+        printf("[ERROR] Latencia/Ancho invalidos.\n");
         return -1;
     }
     if (fiabilidad < 0.0)
@@ -437,7 +437,7 @@ int cargar_grafo(GRAFO *grafo, const char *filename)
                 if (oi == -1 || di == -1)
                 {
                     /* ignorar o reportar en cli */
-                    fprintf(stderr, "[!!!] A hace referencia a nodo invalido: %s -> %s\n", orig, dest);
+                    printf("[ERROR] A hace referencia a nodo invalido: %s -> %s\n", orig, dest);
                 }
                 else
                 {
